@@ -1,20 +1,22 @@
-#Install circuit python, time, glob, board
-
 import time
-
-import adafruit_dht
 import board
-
-dht = adafruit_dht.DHT11(board.D2)
-
+import adafruit_dht
+import psutil
+# We first check if a libgpiod process is running. If yes, we kill it!
+for proc in psutil.process_iter():
+    if proc.name() == 'libgpiod_pulsein' or proc.name() == 'libgpiod_pulsei':
+        proc.kill()
+sensor = adafruit_dht.DHT11(board.D23)
 while True:
     try:
-        temperature = dht.temperature
-        humidity = dht.humidity
-        # Print what we got to the REPL
-        print("Temp: {:.1f} *C \t Humidity: {}%".format(temperature, humidity))
-    except RuntimeError as e:
-        # Reading doesn't always work! Just print error and we'll try again
-        print("Reading from DHT failure: ", e.args)
-
-    time.sleep(1)
+        temp = sensor.temperature
+        humidity = sensor.humidity
+        print("Temperature: {}*C   Humidity: {}% ".format(temp, humidity))
+    except RuntimeError as error:
+        print(error.args[0])
+        time.sleep(2.0)
+        continue
+    except Exception as error:
+        sensor.exit()
+        raise error
+    time.sleep(2.0)
